@@ -1,102 +1,67 @@
-# Development Instructions
+# Develop
 
-This project uses the testing, build and release standards specified
-by the PyPA organization and documented at
-https://packaging.python.org.
+This readme is helpful for local dev.
 
-## Setup
+### Prereqs:
 
-Because of the dependencies it relies on (like `pytorch`), this project does not support Python version >3.10.0.
-
-Set up a virtual environment and install the project's requirements
-and dev requirements:
-
+- Make sure you have Java installed (for the generator). You can download it from [java.com](https://java.com)
+- Make sure you set ALLOW_RESET=True for your Docker Container. If you don't do this, tests won't pass.
 ```
-python3 -m venv venv      # Only need to do this once
-source venv/bin/activate  # Do this each time you use a new shell for the project
-pip install -r requirements.txt
-pip install -r requirements_dev.txt
-pre-commit install # install the precommit hooks
+environment:
+      - IS_PERSISTENT=TRUE
+      - ALLOW_RESET=True
 ```
+- Make sure you are running the docker backend at localhost:8000 (\*there is probably a way to stand up the fastapi server by itself and programmatically in the loop of generating this, but not prioritizing it for now. It may be important for the release)
 
-You can also install `chromadb` the `pypi` package locally and in editable mode with `pip install -e .`.
+### Generating
 
-## Running Chroma
+1. `yarn` to install deps
+2. `yarn genapi`
+3. Examples are in the `examples` folder. There is one for the browser and one for node. Run them with `yarn dev`, eg `cd examples/browser && yarn dev`
 
-Chroma can be run via 3 modes:
-1. Standalone and in-memory:
-```python
-import chromadb
-api = chromadb.Client()
-print(api.heartbeat())
-```
+### Running test
 
-2. Standalone and in-memory with persistence:
+`yarn test` will launch a test docker backend, run a db cleanup and run tests.
+`yarn test:run` will run against the docker backend you have running. But CAUTION, it will delete data. This is the easiest and fastest way to run tests.
 
-This by default saves your db and your indexes to a `.chroma` directory and can also load from them.
-```python
-import chromadb
-api = chromadb.PersistentClient(path="/path/to/persist/directory")
-print(api.heartbeat())
-```
+### Pushing to npm
 
+#### Automatically
 
-3. With a persistent backend and a small frontend client
+##### Increase the version number
+1. Create a new PR for the release that upgrades the version in code. Name it `js_release/A.B.C` for production releases and `js_release_alpha/A.B.C` for alpha releases. In the package.json update the version number to the new version. For production releases this is just the version number, for alpha
+releases this is the version number with '-alphaX' appended to it. For example, if the current version is 1.0.0, the alpha release would be 1.0.0-alpha1 for the first alpha release, 1.0.0-alpha2 for the second alpha release, etc.
+2. Add the "release" label to this PR
+3. Once the PR is merged, tag your commit SHA with the release version
 
-Run `chroma run --path /chroma_db_path`
-```python
-import chromadb
-api = chromadb.HttpClient(host="localhost", port="8000")
+```bash
+git tag js_release_A.B.C <SHA>
 
-print(api.heartbeat())
+# or for alpha releases:
+
+git tag js_release_alpha_A.B.C <SHA>
 ```
 
-## Testing
+4. You need to then wait for the github action for main for `chroma js release` to complete on main.
 
-Unit tests are in the `/chromadb/test` directory.
+##### Perform the release
+1. Push your tag to origin to create the release
 
-To run unit tests using your current environment, run `pytest`.
+```bash
 
-## Manual Build
+git push origin js_release_A.B.C
 
-To manually build a distribution, run `python -m build`.
+# or for alpha releases:
 
-The project's source and wheel distributions will be placed in the `dist` directory.
+git push origin js_release_alpha_A.B.C
+```
+2. This will trigger a Github action which performs the release
 
-## Manual Release
+#### Manually
+`npm run release` pushes the `package.json` defined packaged to the package manager for authenticated users. It will build, test, and then publish the new version.
 
-Not yet implemented.
 
-## Versioning
 
-This project uses PyPA's `setuptools_scm` module to determine the
-version number for build artifacts, meaning the version number is
-derived from Git rather than hardcoded in the repository. For full
-details, see the
-[documentation for setuptools_scm](https://github.com/pypa/setuptools_scm/).
+### Useful links
 
-In brief, version numbers are generated as follows:
-
-- If the current git head is tagged, the version number is exactly the
-  tag (e.g, `0.0.1`).
-- If the the current git head is a clean checkout, but is not tagged,
-  the version number is a patch version increment of the most recent
-  tag, plus `devN` where N is the number of commits since the most
-  recent tag. For example, if there have been 5 commits since the
-  `0.0.1` tag, the generated version will be `0.0.2-dev5`.
-- If the current head is not a clean checkout, a `+dirty` local
-  version will be appended to the version number. For example,
-  `0.0.2-dev5+dirty`.
-
-At any point, you can manually run `python -m setuptools_scm` to see
-what version would be assigned given your current state.
-
-## Continuous Integration
-
-This project uses Github Actions to run unit tests automatically upon
-every commit to the main branch. See the documentation for Github
-Actions and the flow definitions in `.github/workflows` for details.
-
-## Continuous Delivery
-
-Not yet implemented.
+https://gaganpreet.in/posts/hyperproductive-apis-fastapi/
