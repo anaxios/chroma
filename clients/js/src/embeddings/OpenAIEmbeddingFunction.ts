@@ -1,4 +1,4 @@
-import {IEmbeddingFunction} from "./IEmbeddingFunction";
+import { IEmbeddingFunction } from "./IEmbeddingFunction";
 
 let OpenAIApi: any;
 let openAiVersion = null;
@@ -53,6 +53,7 @@ class OpenAIAPIv4 implements OpenAIAPI {
         this.apiKey = apiKey;
         this.openai = new OpenAIApi({
             apiKey: this.apiKey,
+            baseURL: "https://api.together.xyz/",
         });
     }
 
@@ -77,7 +78,7 @@ export class OpenAIEmbeddingFunction implements IEmbeddingFunction {
     private model: string;
     private openaiApi?: OpenAIAPI;
 
-    constructor({openai_api_key, openai_model, openai_organization_id}: {
+    constructor({ openai_api_key, openai_model, openai_organization_id }: {
         openai_api_key: string,
         openai_model?: string,
         openai_organization_id?: string
@@ -91,7 +92,7 @@ export class OpenAIEmbeddingFunction implements IEmbeddingFunction {
 
     private async loadClient() {
         // cache the client
-        if(this.openaiApi) return;
+        if (this.openaiApi) return;
 
         try {
             const { openai, version } = await OpenAIEmbeddingFunction.import();
@@ -129,8 +130,8 @@ export class OpenAIEmbeddingFunction implements IEmbeddingFunction {
         });
     }
 
-     /** @ignore */
-     static async import(): Promise<{
+    /** @ignore */
+    static async import(): Promise<{
         // @ts-ignore
         openai: typeof import("openai");
         version: string;
